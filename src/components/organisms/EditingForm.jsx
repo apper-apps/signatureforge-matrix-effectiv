@@ -107,7 +107,7 @@ const validateField = (type, value) => {
     const validations = {
       email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
       phone: /^[+]?[\d\s\-()]{10,20}$/,
-      website: /^(https?:\/\/)?(www\.)?[a-zA-Z0-9\-]+\.[a-zA-Z]{2,}/
+      website: /^(https?:\/\/)?(www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}/
     };
 
     if (validations[type]) {

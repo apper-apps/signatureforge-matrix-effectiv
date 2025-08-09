@@ -59,10 +59,10 @@ const UploadSection = ({ onSignatureParsed, className }) => {
       const textNodes = [];
       
 // Check if NodeFilter is available (browser environment)
-      if (typeof window !== 'undefined' && typeof NodeFilter !== 'undefined' && document.createTreeWalker) {
+      if (typeof window !== 'undefined' && typeof window.NodeFilter !== 'undefined' && document.createTreeWalker) {
         const walker = document.createTreeWalker(
           doc.body || doc.documentElement,
-          NodeFilter.SHOW_TEXT,
+          window.NodeFilter.SHOW_TEXT,
           null,
           false
         );
@@ -102,12 +102,12 @@ let node;
       }
 
 // Common patterns for email signature elements
-      const patterns = [
+const patterns = [
         { type: "name", regex: /^[A-Za-z\s]{2,40}$/, label: "Full Name" },
         { type: "title", regex: /^[A-Za-z\s\-,&]{3,50}$/, label: "Job Title" },
         { type: "email", regex: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, label: "Email Address" },
         { type: "phone", regex: /^[+]?[\d\s\-()]{10,20}$/, label: "Phone Number" },
-        { type: "website", regex: /^(https?:\/\/)?(www\.)?[a-zA-Z0-9\-]+\.[a-zA-Z]{2,}/, label: "Website" }
+        { type: "website", regex: /^(https?:\/\/)?(www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}/, label: "Website" }
       ];
       textNodes.forEach(({ text, element }) => {
         patterns.forEach(pattern => {

@@ -164,7 +164,7 @@ detectElementType(text) {
       { type: "title", regex: /^[A-Za-z\s\-,&]{3,50}$/, label: "Job Title" },
       { type: "email", regex: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, label: "Email Address" },
       { type: "phone", regex: /^[+]?[\d\s\-()]{10,20}$/, label: "Phone Number" },
-      { type: "website", regex: /^(https?:\/\/)?(www\.)?[a-zA-Z0-9\-]+\.[a-zA-Z]{2,}/, label: "Website" }
+      { type: "website", regex: /^(https?:\/\/)?(www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}/, label: "Website" }
     ];
     for (const pattern of patterns) {
       if (pattern.regex.test(text)) {
