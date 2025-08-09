@@ -65,11 +65,11 @@ const handleImageUpload = async (elementId, file) => {
         ...prev,
         [elementId]: newImageData
       }));
-      
-      // Update signature with new image
-      updateSignature(formData, { ...imageFiles, [elementId]: newImageData });
+// Update signature with new image immediately
+      const updatedImageFiles = { ...imageFiles, [elementId]: newImageData };
+      setImageFiles(updatedImageFiles);
+      updateSignature(formData, updatedImageFiles);
       toast.success("Image updated and cropped to fit");
-      
     } catch (error) {
       console.error("Image processing error:", error);
       toast.error("Failed to process image");
@@ -95,17 +95,17 @@ const updateSignature = (data, images = imageFiles) => {
 // Replace images with precise targeting using data-image-id
         parsedSignature.images.forEach(image => {
           if (images[image.Id]?.base64) {
-            // Create unique cache-busting base64 URL
-            const timestamp = images[image.Id].timestamp || Date.now();
+            // Create unique cache-busting base64 URL with fresh timestamp
+            const timestamp = Date.now() + Math.random(); // Ensure uniqueness
             const base64WithTimestamp = `${images[image.Id].base64}#t=${timestamp}`;
             
             // Use specific data-image-id attribute for precise targeting
             const imageRegex = new RegExp(
-              `(<img[^>]*data-image-id="${image.Id}"[^>]*src=")([^"]*)(")`, 
-              'g'
+              `(<img[^>]*data-image-id="${image.Id}"[^>]*src=")([^"#]*)(#[^"]*)?(")`
             );
             
-            updatedHtml = updatedHtml.replace(imageRegex, (match, before, oldSrc, after) => {
+            updatedHtml = updatedHtml.replace(imageRegex, (match, before, oldSrc, oldHash, after) => {
+              console.log(`Replacing image ${image.Id} with new timestamp: ${timestamp}`);
               return `${before}${base64WithTimestamp}${after}`;
             });
           }
@@ -301,8 +301,8 @@ const validateField = (type, value) => {
                 <div className="flex items-center gap-4">
 <div className="flex-shrink-0">
                     <img
-                      key={`${image.Id}-${imageFiles[image.Id]?.timestamp || 'original'}`}
-                      src={imageFiles[image.Id]?.base64 || image.src}
+                      key={`img-${image.Id}-${imageFiles[image.Id]?.timestamp || Date.now()}`}
+                      src={`${imageFiles[image.Id]?.base64 || image.src}#t=${imageFiles[image.Id]?.timestamp || Date.now()}`}
                       alt={image.type}
                       className="w-16 h-16 object-cover rounded-lg border border-gray-200"
                       onError={(e) => {
