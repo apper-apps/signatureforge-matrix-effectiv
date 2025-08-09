@@ -29,7 +29,8 @@ const EditingForm = ({ parsedSignature, onSignatureUpdate, className }) => {
     // Update signature in real-time
     updateSignature(updatedData);
   };
-const handleImageUpload = async (elementId, file) => {
+
+  const handleImageUpload = (elementId, file) => {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
@@ -37,36 +38,24 @@ const handleImageUpload = async (elementId, file) => {
       return;
     }
 
-    try {
-      // Get original image dimensions from signature
-      const originalImage = parsedSignature.images.find(img => img.Id === elementId);
-      const targetDimensions = originalImage?.dimensions || { width: 100, height: 100 };
-
-      // Process and auto-crop the uploaded image
-      const processedImage = await processAndCropImage(file, targetDimensions);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target.result;
+      setImageFiles(prev => ({
+        ...prev,
+        [elementId]: {
+          file,
+          base64,
+          dimensions: { width: 100, height: 100 }
+        }
+      }));
       
-      // Set new image with unique timestamp to force re-render
-      const timestamp = Date.now();
-      const newImageData = {
-        file,
-        base64: processedImage.base64,
-        dimensions: processedImage.dimensions,
-        timestamp
-      };
-
-      // Update image files state with new image
-      const updatedImageFiles = { ...imageFiles, [elementId]: newImageData };
-      setImageFiles(updatedImageFiles);
-      
-      // Immediately update signature with new image
-      updateSignature(formData, updatedImageFiles);
-      toast.success("Image updated and cropped to fit");
-    } catch (error) {
-      console.error("Image processing error:", error);
-      toast.error("Failed to process image");
-    }
+      updateSignature(formData, { ...imageFiles, [elementId]: { base64 } });
+    };
+    reader.readAsDataURL(file);
   };
-const updateSignature = (data, images = imageFiles) => {
+
+  const updateSignature = (data, images = imageFiles) => {
     if (!parsedSignature) return;
 
     setIsProcessing(true);
@@ -83,20 +72,11 @@ const updateSignature = (data, images = imageFiles) => {
           }
         });
 
-        // Replace images using simplified targeting
+        // Replace images
         parsedSignature.images.forEach(image => {
           if (images[image.Id]?.base64) {
-            const timestamp = images[image.Id].timestamp || Date.now();
-            const newImageSrc = `${images[image.Id].base64}#t=${timestamp}`;
-            
-            // Simple regex to target images with data-image-id attribute
-            const imagePattern = new RegExp(
-              `(<img[^>]*data-image-id="${image.Id}"[^>]*src=")([^"]*)(")`,
-              'g'
-            );
-            
-            updatedHtml = updatedHtml.replace(imagePattern, `$1${newImageSrc}$3`);
-            console.log(`Updated image ${image.Id} with timestamp: ${timestamp}`);
+            const regex = new RegExp(`src="${escapeRegExp(image.src)}"`, "g");
+            updatedHtml = updatedHtml.replace(regex, `src="${images[image.Id].base64}"`);
           }
         });
 
@@ -106,15 +86,6 @@ const updateSignature = (data, images = imageFiles) => {
           elements: parsedSignature.elements.map(element => ({
             ...element,
             value: data[element.Id] !== undefined ? data[element.Id] : element.value
-          })),
-          images: parsedSignature.images.map(image => ({
-            ...image,
-            ...(images[image.Id] && {
-              src: images[image.Id].base64,
-              base64: images[image.Id].base64,
-              dimensions: images[image.Id].dimensions,
-              timestamp: images[image.Id].timestamp
-            })
           }))
         };
 
@@ -126,64 +97,6 @@ const updateSignature = (data, images = imageFiles) => {
         setIsProcessing(false);
       }
     }, 100);
-  };
-
-  // Auto-crop and resize image to match original dimensions
-  const processAndCropImage = (file, targetDimensions) => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-
-      img.onload = () => {
-        const { width: targetWidth, height: targetHeight } = targetDimensions;
-        
-        // Set canvas dimensions to target size
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-
-        // Calculate scaling and positioning for center crop
-        const sourceAspect = img.width / img.height;
-        const targetAspect = targetWidth / targetHeight;
-
-        let sourceX = 0, sourceY = 0, sourceWidth = img.width, sourceHeight = img.height;
-
-        if (sourceAspect > targetAspect) {
-          // Source is wider - crop horizontally
-          sourceWidth = img.height * targetAspect;
-          sourceX = (img.width - sourceWidth) / 2;
-        } else {
-          // Source is taller - crop vertically  
-          sourceHeight = img.width / targetAspect;
-          sourceY = (img.height - sourceHeight) / 2;
-        }
-
-        // Draw cropped and scaled image
-        ctx.drawImage(
-          img,
-          sourceX, sourceY, sourceWidth, sourceHeight,
-          0, 0, targetWidth, targetHeight
-        );
-
-        // Convert to base64
-        const base64 = canvas.toDataURL(file.type || 'image/jpeg', 0.9);
-
-        resolve({
-          base64,
-          dimensions: { width: targetWidth, height: targetHeight }
-        });
-      };
-
-      img.onerror = () => reject(new Error('Failed to load image'));
-
-      // Create object URL for the uploaded file
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        img.src = e.target.result;
-      };
-      reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsDataURL(file);
-    });
   };
 
   const escapeRegExp = (string) => {
@@ -289,16 +202,11 @@ const validateField = (type, value) => {
             {parsedSignature.images.map((image) => (
               <div key={image.Id} className="p-4 border border-gray-200 rounded-lg">
                 <div className="flex items-center gap-4">
-<div className="flex-shrink-0">
-<img
-                      key={`img-${image.Id}-${imageFiles[image.Id]?.timestamp || 'default'}`}
+                  <div className="flex-shrink-0">
+                    <img
                       src={imageFiles[image.Id]?.base64 || image.src}
                       alt={image.type}
                       className="w-16 h-16 object-cover rounded-lg border border-gray-200"
-                      onError={(e) => {
-                        console.log('Image load error for:', image.Id);
-                        e.target.style.display = 'none';
-                      }}
                     />
                   </div>
                   <div className="flex-1">
