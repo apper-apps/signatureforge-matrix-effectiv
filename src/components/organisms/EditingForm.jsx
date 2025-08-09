@@ -30,7 +30,7 @@ const EditingForm = ({ parsedSignature, onSignatureUpdate, className }) => {
     updateSignature(updatedData);
   };
 
-  const handleImageUpload = (elementId, file) => {
+const handleImageUpload = (elementId, file) => {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
@@ -49,13 +49,18 @@ const EditingForm = ({ parsedSignature, onSignatureUpdate, className }) => {
           dimensions: { width: 100, height: 100 }
         }
       }));
-      
-      updateSignature(formData, { ...imageFiles, [elementId]: { base64 } });
     };
     reader.readAsDataURL(file);
   };
 
-  const updateSignature = (data, images = imageFiles) => {
+  // Trigger signature update when imageFiles changes
+  useEffect(() => {
+    if (Object.keys(imageFiles).length > 0) {
+      updateSignature(formData, imageFiles);
+    }
+  }, [imageFiles]);
+
+const updateSignature = (data, images = imageFiles) => {
     if (!parsedSignature) return;
 
     setIsProcessing(true);
@@ -72,11 +77,20 @@ const EditingForm = ({ parsedSignature, onSignatureUpdate, className }) => {
           }
         });
 
-        // Replace images
+        // Replace images with improved logic
         parsedSignature.images.forEach(image => {
           if (images[image.Id]?.base64) {
-            const regex = new RegExp(`src="${escapeRegExp(image.src)}"`, "g");
-            updatedHtml = updatedHtml.replace(regex, `src="${images[image.Id].base64}"`);
+            // Create more robust regex patterns to handle different src formats
+            const patterns = [
+              new RegExp(`src="${escapeRegExp(image.src)}"`, "g"),
+              new RegExp(`src='${escapeRegExp(image.src)}'`, "g"),
+              new RegExp(`src="${escapeRegExp(image.base64 || image.src)}"`, "g"),
+              new RegExp(`src='${escapeRegExp(image.base64 || image.src)}'`, "g")
+            ];
+            
+            patterns.forEach(regex => {
+              updatedHtml = updatedHtml.replace(regex, `src="${images[image.Id].base64}"`);
+            });
           }
         });
 
@@ -86,6 +100,11 @@ const EditingForm = ({ parsedSignature, onSignatureUpdate, className }) => {
           elements: parsedSignature.elements.map(element => ({
             ...element,
             value: data[element.Id] !== undefined ? data[element.Id] : element.value
+          })),
+          images: parsedSignature.images.map(image => ({
+            ...image,
+            base64: images[image.Id]?.base64 || image.base64,
+            src: images[image.Id]?.base64 || image.src
           }))
         };
 
