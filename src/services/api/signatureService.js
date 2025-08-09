@@ -105,11 +105,16 @@ class SignatureService {
         }
       });
 
-      // Extract images
+// Extract images and add unique identifiers
       const imgElements = doc.querySelectorAll("img");
       imgElements.forEach((img, index) => {
+        const imageId = index + 1;
+        
+        // Add unique data attribute to the image for precise targeting
+        img.setAttribute('data-image-id', imageId);
+        
         images.push({
-          Id: index + 1,
+          Id: imageId,
           type: this.detectImageType(img),
           src: img.src,
           base64: img.src,
@@ -119,6 +124,9 @@ class SignatureService {
           }
         });
       });
+
+      // Update HTML content with the modified DOM
+      htmlContent = doc.documentElement.outerHTML;
 
       return {
         Id: Date.now(),

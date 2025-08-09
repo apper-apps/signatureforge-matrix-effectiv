@@ -92,22 +92,21 @@ const updateSignature = (data, images = imageFiles) => {
           }
         });
 
-        // Replace images with force refresh handling
+// Replace images with precise targeting using data-image-id
         parsedSignature.images.forEach(image => {
           if (images[image.Id]?.base64) {
             // Create unique cache-busting base64 URL
             const timestamp = images[image.Id].timestamp || Date.now();
             const base64WithTimestamp = `${images[image.Id].base64}#t=${timestamp}`;
             
-            // Replace all occurrences of the original image src
-            const srcRegex = new RegExp(`src="[^"]*?"`, 'g');
-            updatedHtml = updatedHtml.replace(srcRegex, (match) => {
-              // Check if this src attribute belongs to our image
-              const currentSrc = match.match(/src="([^"]*?)"/)[1];
-              if (currentSrc === image.src || currentSrc.includes(image.Id) || currentSrc.includes('base64')) {
-                return `src="${base64WithTimestamp}"`;
-              }
-              return match;
+            // Use specific data-image-id attribute for precise targeting
+            const imageRegex = new RegExp(
+              `(<img[^>]*data-image-id="${image.Id}"[^>]*src=")([^"]*)(")`, 
+              'g'
+            );
+            
+            updatedHtml = updatedHtml.replace(imageRegex, (match, before, oldSrc, after) => {
+              return `${before}${base64WithTimestamp}${after}`;
             });
           }
         });
