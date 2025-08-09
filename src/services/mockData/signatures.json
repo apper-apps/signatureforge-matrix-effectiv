@@ -1,0 +1,16 @@
+[
+  {
+    "Id": 1,
+    "name": "Sample Corporate Signature",
+    "html": "<table style='font-family: Arial, sans-serif; font-size: 14px;'><tr><td><img src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' width='80' height='80' alt='Profile Picture' style='border-radius: 50%; margin-right: 15px;'/></td><td><strong>John Smith</strong><br/>Senior Marketing Manager<br/>Phone: +1 (555) 123-4567<br/>Email: john.smith@company.com<br/><a href='https://www.company.com'>www.company.com</a></td></tr></table>",
+    "thumbnail": "",
+    "lastModified": "2024-01-15T10:30:00Z"
+  },
+  {
+    "Id": 2,
+    "name": "Modern Design Signature",
+    "html": "<div style='font-family: Helvetica, Arial, sans-serif; color: #333;'><div style='display: flex; align-items: center;'><img src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' width='100' height='40' alt='Company Logo' style='margin-right: 20px;'/><div><h3 style='margin: 0; color: #2563eb;'>Sarah Johnson</h3><p style='margin: 0; color: #666;'>Creative Director</p><p style='margin: 5px 0 0 0; font-size: 12px;'>📞 +1 (555) 987-6543 | ✉️ sarah@agency.com</p></div></div></div>",
+    "thumbnail": "",
+    "lastModified": "2024-01-10T14:15:00Z"
+  }
+]
