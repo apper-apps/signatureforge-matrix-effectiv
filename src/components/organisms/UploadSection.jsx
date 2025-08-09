@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { cn } from "@/utils/cn";
-import Card from "@/components/atoms/Card";
+import { toast } from "react-toastify";
+import ApperIcon from "@/components/ApperIcon";
 import FileUpload from "@/components/molecules/FileUpload";
 import PasteArea from "@/components/molecules/PasteArea";
+import Card from "@/components/atoms/Card";
 import Button from "@/components/atoms/Button";
-import ApperIcon from "@/components/ApperIcon";
-import { toast } from "react-toastify";
+import { cn } from "@/utils/cn";
 
 const UploadSection = ({ onSignatureParsed, className }) => {
   const [activeTab, setActiveTab] = useState("upload");
@@ -58,8 +58,8 @@ const UploadSection = ({ onSignatureParsed, className }) => {
 // Find text nodes and common elements
       const textNodes = [];
       
-      // Check if NodeFilter is available (browser environment)
-      if (typeof NodeFilter !== 'undefined' && document.createTreeWalker) {
+// Check if NodeFilter is available (browser environment)
+      if (typeof window !== 'undefined' && typeof NodeFilter !== 'undefined' && document.createTreeWalker) {
         const walker = document.createTreeWalker(
           doc.body || doc.documentElement,
           NodeFilter.SHOW_TEXT,
@@ -67,8 +67,8 @@ const UploadSection = ({ onSignatureParsed, className }) => {
           false
         );
 
-        let node;
-        while (node = walker.nextNode()) {
+let node;
+        while ((node = walker.nextNode())) {
           const text = node.textContent?.trim();
           if (text && text.length > 2) {
             textNodes.push({
@@ -101,15 +101,14 @@ const UploadSection = ({ onSignatureParsed, className }) => {
         textNodes.push(...getAllTextNodes(doc.body || doc.documentElement));
       }
 
-      // Common patterns for email signature elements
+// Common patterns for email signature elements
       const patterns = [
         { type: "name", regex: /^[A-Za-z\s]{2,40}$/, label: "Full Name" },
         { type: "title", regex: /^[A-Za-z\s\-,&]{3,50}$/, label: "Job Title" },
         { type: "email", regex: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, label: "Email Address" },
-        { type: "phone", regex: /^[\+]?[\d\s\-\(\)]{10,20}$/, label: "Phone Number" },
+        { type: "phone", regex: /^[+]?[\d\s\-()]{10,20}$/, label: "Phone Number" },
         { type: "website", regex: /^(https?:\/\/)?(www\.)?[a-zA-Z0-9\-]+\.[a-zA-Z]{2,}/, label: "Website" }
       ];
-
       textNodes.forEach(({ text, element }) => {
         patterns.forEach(pattern => {
           if (pattern.regex.test(text) && !elements.find(el => el.value === text)) {

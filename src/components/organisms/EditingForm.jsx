@@ -103,10 +103,10 @@ const EditingForm = ({ parsedSignature, onSignatureUpdate, className }) => {
     return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   };
 
-  const validateField = (type, value) => {
+const validateField = (type, value) => {
     const validations = {
       email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-      phone: /^[\+]?[\d\s\-\(\)]{10,20}$/,
+      phone: /^[+]?[\d\s\-()]{10,20}$/,
       website: /^(https?:\/\/)?(www\.)?[a-zA-Z0-9\-]+\.[a-zA-Z]{2,}/
     };
 
