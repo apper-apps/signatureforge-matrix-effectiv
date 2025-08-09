@@ -45,13 +45,6 @@ const handleImageUpload = async (elementId, file) => {
       // Process and auto-crop the uploaded image
       const processedImage = await processAndCropImage(file, targetDimensions);
       
-      // Clear previous image data to force refresh
-      setImageFiles(prev => {
-        const updated = { ...prev };
-        delete updated[elementId];
-        return updated;
-      });
-
       // Set new image with unique timestamp to force re-render
       const timestamp = Date.now();
       const newImageData = {
@@ -61,13 +54,11 @@ const handleImageUpload = async (elementId, file) => {
         timestamp
       };
 
-      setImageFiles(prev => ({
-        ...prev,
-        [elementId]: newImageData
-      }));
-// Update signature with new image immediately
+      // Update image files state with new image
       const updatedImageFiles = { ...imageFiles, [elementId]: newImageData };
       setImageFiles(updatedImageFiles);
+      
+      // Immediately update signature with new image
       updateSignature(formData, updatedImageFiles);
       toast.success("Image updated and cropped to fit");
     } catch (error) {
@@ -92,22 +83,20 @@ const updateSignature = (data, images = imageFiles) => {
           }
         });
 
-// Replace images with precise targeting using data-image-id
+        // Replace images using simplified targeting
         parsedSignature.images.forEach(image => {
           if (images[image.Id]?.base64) {
-            // Create unique cache-busting base64 URL with fresh timestamp
-            const timestamp = Date.now() + Math.random(); // Ensure uniqueness
-            const base64WithTimestamp = `${images[image.Id].base64}#t=${timestamp}`;
+            const timestamp = images[image.Id].timestamp || Date.now();
+            const newImageSrc = `${images[image.Id].base64}#t=${timestamp}`;
             
-            // Use specific data-image-id attribute for precise targeting
-            const imageRegex = new RegExp(
-              `(<img[^>]*data-image-id="${image.Id}"[^>]*src=")([^"#]*)(#[^"]*)?(")`
+            // Simple regex to target images with data-image-id attribute
+            const imagePattern = new RegExp(
+              `(<img[^>]*data-image-id="${image.Id}"[^>]*src=")([^"]*)(")`,
+              'g'
             );
             
-            updatedHtml = updatedHtml.replace(imageRegex, (match, before, oldSrc, oldHash, after) => {
-              console.log(`Replacing image ${image.Id} with new timestamp: ${timestamp}`);
-              return `${before}${base64WithTimestamp}${after}`;
-            });
+            updatedHtml = updatedHtml.replace(imagePattern, `$1${newImageSrc}$3`);
+            console.log(`Updated image ${image.Id} with timestamp: ${timestamp}`);
           }
         });
 
@@ -123,7 +112,8 @@ const updateSignature = (data, images = imageFiles) => {
             ...(images[image.Id] && {
               src: images[image.Id].base64,
               base64: images[image.Id].base64,
-              dimensions: images[image.Id].dimensions
+              dimensions: images[image.Id].dimensions,
+              timestamp: images[image.Id].timestamp
             })
           }))
         };
@@ -300,9 +290,9 @@ const validateField = (type, value) => {
               <div key={image.Id} className="p-4 border border-gray-200 rounded-lg">
                 <div className="flex items-center gap-4">
 <div className="flex-shrink-0">
-                    <img
-                      key={`img-${image.Id}-${imageFiles[image.Id]?.timestamp || Date.now()}`}
-                      src={`${imageFiles[image.Id]?.base64 || image.src}#t=${imageFiles[image.Id]?.timestamp || Date.now()}`}
+<img
+                      key={`img-${image.Id}-${imageFiles[image.Id]?.timestamp || 'default'}`}
+                      src={imageFiles[image.Id]?.base64 || image.src}
                       alt={image.type}
                       className="w-16 h-16 object-cover rounded-lg border border-gray-200"
                       onError={(e) => {
