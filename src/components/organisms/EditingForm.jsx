@@ -77,20 +77,34 @@ const updateSignature = (data, images = imageFiles) => {
           }
         });
 
-        // Replace images with improved logic
+// Replace images with improved logic that handles multiple updates
         parsedSignature.images.forEach(image => {
           if (images[image.Id]?.base64) {
-            // Create more robust regex patterns to handle different src formats
-            const patterns = [
-              new RegExp(`src="${escapeRegExp(image.src)}"`, "g"),
-              new RegExp(`src='${escapeRegExp(image.src)}'`, "g"),
-              new RegExp(`src="${escapeRegExp(image.base64 || image.src)}"`, "g"),
-              new RegExp(`src='${escapeRegExp(image.base64 || image.src)}'`, "g")
-            ];
+            // Create a unique identifier for each image based on its ID
+            const imageMarker = `data-image-id="${image.Id}"`;
             
-            patterns.forEach(regex => {
-              updatedHtml = updatedHtml.replace(regex, `src="${images[image.Id].base64}"`);
-            });
+            // First, ensure the image has our tracking attribute
+            if (!updatedHtml.includes(imageMarker)) {
+              // Find the image by its xpath or current src and add tracking attribute
+              const imgRegex = new RegExp(`(<img[^>]*?src=["'])[^"']*?(["'][^>]*?>)`, 'gi');
+              let matchFound = false;
+              
+              updatedHtml = updatedHtml.replace(imgRegex, (match, prefix, suffix) => {
+                if (!matchFound && (match.includes(escapeRegExp(image.src)) || 
+                    (image.base64 && match.includes(image.base64.substring(0, 50))))) {
+                  matchFound = true;
+                  return `${prefix}${images[image.Id].base64}${suffix.replace('>', ` ${imageMarker}>`)}`;
+                }
+                return match;
+              });
+            } else {
+              // Image already has tracking attribute, just update the src
+              const trackedImageRegex = new RegExp(
+                `(<img[^>]*?)src=["'][^"']*?(["'][^>]*?${escapeRegExp(imageMarker)}[^>]*?>)`,
+                'gi'
+              );
+              updatedHtml = updatedHtml.replace(trackedImageRegex, `$1src="${images[image.Id].base64}"$2`);
+            }
           }
         });
 
