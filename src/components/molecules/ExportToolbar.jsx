@@ -35,52 +35,18 @@ const ExportToolbar = ({ html, parsedSignature, className }) => {
     }
   };
 
-const copyToClipboard = async () => {
+  const copyToClipboard = async () => {
     if (!html) {
       toast.error("No signature to copy");
       return;
     }
 
-    // Try modern Clipboard API first
-    if (navigator.clipboard && window.isSecureContext) {
-      try {
-        // Check permissions
-        const permission = await navigator.permissions.query({ name: 'clipboard-write' });
-        if (permission.state === 'granted' || permission.state === 'prompt') {
-          await navigator.clipboard.writeText(html);
-          toast.success("Signature copied to clipboard!");
-          return;
-        }
-      } catch (error) {
-        console.warn("Clipboard API failed, trying fallback:", error);
-      }
-    }
-
-    // Fallback to legacy method
     try {
-      const textArea = document.createElement('textarea');
-      textArea.value = html;
-      textArea.style.position = 'fixed';
-      textArea.style.left = '-9999px';
-      textArea.style.top = '-9999px';
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-      
-      const successful = document.execCommand('copy');
-      document.body.removeChild(textArea);
-      
-      if (successful) {
-        toast.success("Signature copied to clipboard!");
-      } else {
-        throw new Error('execCommand failed');
-      }
+      await navigator.clipboard.writeText(html);
+      toast.success("Signature copied to clipboard!");
     } catch (error) {
-      console.error("All copy methods failed:", error);
-      toast.error(
-        "Cannot access clipboard. Please copy manually: Ctrl+A to select all, then Ctrl+C to copy",
-        { autoClose: 8000 }
-      );
+      toast.error("Failed to copy signature");
+      console.error("Copy error:", error);
     }
   };
 

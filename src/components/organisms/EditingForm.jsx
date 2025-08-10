@@ -30,7 +30,7 @@ const EditingForm = ({ parsedSignature, onSignatureUpdate, className }) => {
     updateSignature(updatedData);
   };
 
-const handleImageUpload = (elementId, file) => {
+  const handleImageUpload = (elementId, file) => {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
@@ -49,18 +49,13 @@ const handleImageUpload = (elementId, file) => {
           dimensions: { width: 100, height: 100 }
         }
       }));
+      
+      updateSignature(formData, { ...imageFiles, [elementId]: { base64 } });
     };
     reader.readAsDataURL(file);
   };
 
-  // Trigger signature update when imageFiles changes
-  useEffect(() => {
-    if (Object.keys(imageFiles).length > 0) {
-      updateSignature(formData, imageFiles);
-    }
-  }, [imageFiles]);
-
-const updateSignature = (data, images = imageFiles) => {
+  const updateSignature = (data, images = imageFiles) => {
     if (!parsedSignature) return;
 
     setIsProcessing(true);
@@ -77,34 +72,11 @@ const updateSignature = (data, images = imageFiles) => {
           }
         });
 
-// Replace images with improved logic that handles multiple updates
+        // Replace images
         parsedSignature.images.forEach(image => {
           if (images[image.Id]?.base64) {
-            // Create a unique identifier for each image based on its ID
-            const imageMarker = `data-image-id="${image.Id}"`;
-            
-            // First, ensure the image has our tracking attribute
-            if (!updatedHtml.includes(imageMarker)) {
-              // Find the image by its xpath or current src and add tracking attribute
-              const imgRegex = new RegExp(`(<img[^>]*?src=["'])[^"']*?(["'][^>]*?>)`, 'gi');
-              let matchFound = false;
-              
-              updatedHtml = updatedHtml.replace(imgRegex, (match, prefix, suffix) => {
-                if (!matchFound && (match.includes(escapeRegExp(image.src)) || 
-                    (image.base64 && match.includes(image.base64.substring(0, 50))))) {
-                  matchFound = true;
-                  return `${prefix}${images[image.Id].base64}${suffix.replace('>', ` ${imageMarker}>`)}`;
-                }
-                return match;
-              });
-            } else {
-              // Image already has tracking attribute, just update the src
-              const trackedImageRegex = new RegExp(
-                `(<img[^>]*?)src=["'][^"']*?(["'][^>]*?${escapeRegExp(imageMarker)}[^>]*?>)`,
-                'gi'
-              );
-              updatedHtml = updatedHtml.replace(trackedImageRegex, `$1src="${images[image.Id].base64}"$2`);
-            }
+            const regex = new RegExp(`src="${escapeRegExp(image.src)}"`, "g");
+            updatedHtml = updatedHtml.replace(regex, `src="${images[image.Id].base64}"`);
           }
         });
 
@@ -114,11 +86,6 @@ const updateSignature = (data, images = imageFiles) => {
           elements: parsedSignature.elements.map(element => ({
             ...element,
             value: data[element.Id] !== undefined ? data[element.Id] : element.value
-          })),
-          images: parsedSignature.images.map(image => ({
-            ...image,
-            base64: images[image.Id]?.base64 || image.base64,
-            src: images[image.Id]?.base64 || image.src
           }))
         };
 
